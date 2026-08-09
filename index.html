@@ -1417,19 +1417,37 @@ requestAnimationFrame(tickParallax);
     }, 2000);
   });
 })();
-
 (function wireBgMusic(){
   const audio = document.getElementById('bgMusic');
   if(!audio) return;
 
+  let musicStarted = false;
+
   window.startBgMusic = function startBgMusic(){
     audio.volume = 0.45;
     audio.muted = false;
+    musicStarted = true;
+
     const play = audio.play();
     if(play && typeof play.then === 'function'){
       play.catch(()=>{});
     }
   };
+
+  // Pause when leaving Safari/Chrome or switching apps
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden){
+      if(!audio.paused){
+        audio.pause();
+      }
+    } else if(musicStarted){
+      // Resume automatically when returning
+      const play = audio.play();
+      if(play && typeof play.then === 'function'){
+        play.catch(()=>{});
+      }
+    }
+  });
 })();
 
 (function scratchCard(){
