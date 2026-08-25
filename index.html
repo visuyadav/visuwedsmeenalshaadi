@@ -548,6 +548,13 @@
     pointer-events:auto;
   }
   .scroll-cue span{ color:var(--gold-deep); }
+  .scroll-down-image{
+    position:fixed; right:24px; bottom:24px; width:64px; height:auto;
+    z-index:2147483646; pointer-events:none; opacity:0;
+    transition:opacity .9s ease;
+  }
+  .scroll-down-image.bounce{ animation:scrollBounce 1.6s ease-in-out infinite; }
+  @keyframes scrollBounce{0%,100%{transform:translateY(0);}50%{transform:translateY(7px);}}
 
   /* =====================================================
      3. ITINERARY
@@ -1445,10 +1452,58 @@ requestAnimationFrame(tickParallax);
     document.body.classList.add('doors-open');
     document.documentElement.classList.add('doors-open');
     if(typeof window.startBgMusic === 'function') window.startBgMusic();
+
     // paint scratch foil after the reveal page is visible & laid out
     setTimeout(()=>{
       if(typeof window.initScratchCard === 'function') window.initScratchCard(true);
     }, 2000);
+
+    // persistent, right-side scroll cue + gentle auto-scroll after 3s
+    try{
+      if(!prefersReducedMotion){
+        let fixedHint = document.getElementById('scrollHintFixed');
+        if(!fixedHint){
+          fixedHint = document.createElement('img');
+          fixedHint.id = 'scrollHintFixed';
+          fixedHint.src = 'wedding%20images/scroll.png';
+          fixedHint.alt = 'Scroll down';
+          fixedHint.className = 'scroll-down-image bounce';
+          fixedHint.style.position = 'fixed';
+          fixedHint.style.right = '24px';
+          fixedHint.style.bottom = '24px';
+          fixedHint.style.width = '64px';
+          fixedHint.style.zIndex = '2147483646';
+          fixedHint.style.opacity = '0';
+          fixedHint.style.pointerEvents = 'none';
+          fixedHint.style.transition = 'opacity .9s ease';
+          document.body.appendChild(fixedHint);
+          setTimeout(()=>{ fixedHint.style.opacity = '1'; }, 200);
+        } else {
+          fixedHint.style.opacity = '1';
+        }
+
+        let autoScrollTimer = setTimeout(()=>{
+          if(!document.body.classList.contains('doors-open')) return;
+          if(window.scrollY > 20) return;
+          const amount = Math.min(180, Math.round(window.innerHeight * 0.12));
+          window.scrollTo({ top: amount, behavior: 'smooth' });
+          setTimeout(()=>{
+            if(window.scrollY > amount + 20) return;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 2200);
+        }, 3000);
+
+        const cancelAuto = ()=>{
+          clearTimeout(autoScrollTimer);
+          window.removeEventListener('wheel', cancelAuto, {passive:true});
+          window.removeEventListener('touchstart', cancelAuto, {passive:true});
+          window.removeEventListener('keydown', cancelAuto, {passive:false});
+        };
+        window.addEventListener('wheel', cancelAuto, {passive:true});
+        window.addEventListener('touchstart', cancelAuto, {passive:true});
+        window.addEventListener('keydown', cancelAuto, {passive:false});
+      }
+    }catch(_){ }
   });
 })();
 (function wireBgMusic(){
